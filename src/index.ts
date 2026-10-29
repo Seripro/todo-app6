@@ -1,27 +1,24 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
-import { cors } from "hono/cors";
 import "dotenv/config";
 import { drizzle } from "drizzle-orm/mysql2";
 import { todosTable } from "./db/schema.js";
 import { eq } from "drizzle-orm";
+import { registerPages } from "./pages.js";
 
 const db = drizzle(process.env.DATABASE_URL!);
 
-const app = new Hono();
+export const app = new Hono();
 
-app.use(
-  "/*",
-  cors({
-    origin: "http://localhost:5173",
-    allowMethods: ["GET", "POST", "DELETE", "OPTIONS", "PATCH"],
-    allowHeaders: ["Content-Type"],
-  }),
-);
-
-app.get("/", (c) => {
-  return c.text("Hello Hono!");
-});
+// app.use(
+//   "/*",
+//   cors({
+//     origin: "http://localhost:5173",
+//     allowMethods: ["GET", "POST", "DELETE", "OPTIONS", "PATCH"],
+//     allowHeaders: ["Content-Type"],
+//   }),
+// );
+registerPages(app);
 
 app.get("/api/todos", async (c) => {
   try {
@@ -34,7 +31,12 @@ app.get("/api/todos", async (c) => {
 
 app.post("/api/todos", async (c) => {
   try {
-    const { title } = await c.req.json<{ title: string }>();
+    const isForm = c.req
+      .header("content-type")
+      ?.includes("application/x-www-form-urlencoded");
+    const { title } = isForm
+      ? await c.req.parseBody<{ title?: string }>()
+      : await c.req.json<{ title?: string }>();
     if (!title || !title.trim()) {
       return c.json({ error: "Title is required" }, 400);
     }
@@ -43,42 +45,43 @@ app.post("/api/todos", async (c) => {
       completed: false,
       createdAt: new Date(),
     };
-    const id = await db.insert(todosTable).values(newTodo).$returningId();
+    const [inserted] = await db
+      .insert(todosTable)
+      .values(newTodo)
+      .$returningId();
     const created = {
-      id: id,
+      id: inserted.id,
       ...newTodo,
     };
+    if (isForm) {
+      return c.redirect("/");
+    }
     return c.json(created, 201);
   } catch {
     return c.json({ error: "Failed to add todo" }, 500);
   }
 });
 
-app.patch("/api/todos/:id", async (c) => {
+app.post("/api/todos/:id", async (c) => {
   try {
-    const strId = await c.req.param("id");
-    const id = Number(strId);
-    const { completed } = await c.req.json();
-    await db
-      .update(todosTable)
-      .set({
-        completed: completed,
-      })
-      .where(eq(todosTable.id, id));
-    return c.json({ id: id, message: "Updated successfully" }, 200);
+    const id = Number(c.req.param("id"));
+    const body = await c.req.parseBody<{
+      action?: string;
+      completed?: string;
+    }>();
+
+    if (body.action === "delete") {
+      await db.delete(todosTable).where(eq(todosTable.id, id));
+    } else if (body.action === "toggle") {
+      await db
+        .update(todosTable)
+        .set({ completed: body.completed !== "true" })
+        .where(eq(todosTable.id, id));
+    }
+
+    return c.redirect("/");
   } catch {
     return c.json({ error: "Failed to update todo" }, 500);
-  }
-});
-
-app.delete("/api/todos/:id", async (c) => {
-  try {
-    const strId = await c.req.param("id");
-    const id = Number(strId);
-    await db.delete(todosTable).where(eq(todosTable.id, id));
-    return c.json({ id: id, message: "Deleted successfully" }, 200);
-  } catch {
-    return c.json({ error: "Failed to delete todo" }, 500);
   }
 });
 
