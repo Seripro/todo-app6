@@ -1,0 +1,79 @@
+{
+  "version": "6",
+  "dialect": "mysql",
+  "id": "f9aaefef-f2c8-4a2d-a2bc-19e7c621e322",
+  "prevIds": [
+    "00000000-0000-0000-0000-000000000000"
+  ],
+  "ddl": [
+    {
+      "name": "todos_table",
+      "entityType": "tables"
+    },
+    {
+      "table": "todos_table",
+      "name": "id",
+      "type": "int",
+      "notNull": true,
+      "autoIncrement": true,
+      "default": null,
+      "onUpdateNow": false,
+      "onUpdateNowFsp": null,
+      "charSet": null,
+      "collation": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "todos_table",
+      "name": "title",
+      "type": "varchar(255)",
+      "notNull": true,
+      "autoIncrement": false,
+      "default": null,
+      "onUpdateNow": false,
+      "onUpdateNowFsp": null,
+      "charSet": null,
+      "collation": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "todos_table",
+      "name": "completed",
+      "type": "boolean",
+      "notNull": true,
+      "autoIncrement": false,
+      "default": null,
+      "onUpdateNow": false,
+      "onUpdateNowFsp": null,
+      "charSet": null,
+      "collation": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "todos_table",
+      "name": "createdAt",
+      "type": "timestamp",
+      "notNull": true,
+      "autoIncrement": false,
+      "default": null,
+      "onUpdateNow": false,
+      "onUpdateNowFsp": null,
+      "charSet": null,
+      "collation": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "todos_table",
+      "name": "PRIMARY",
+      "columns": [
+        "id"
+      ],
+      "entityType": "pks"
+    }
+  ],
+  "renames": []
+}
